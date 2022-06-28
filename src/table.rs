@@ -1,15 +1,8 @@
+use crate::error::TableError;
 use std::collections::btree_map::Entry;
 use std::collections::*;
 use std::error::Error;
 use std::fmt::Debug;
-
-#[derive(thiserror::Error, Debug)]
-pub enum TableError<T: Identity> {
-    #[error("Constraint {0:} failed: {1:}")]
-    Constraint(String, Box<dyn Error>),
-    #[error("Value with primary key {0:?} already exists")]
-    Exists(T::PrimaryKey),
-}
 
 pub trait Identity {
     type PrimaryKey: Eq + Ord + Clone + Debug;
