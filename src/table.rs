@@ -1,4 +1,4 @@
-use crate::error::TableError;
+use crate::error::{IndexError, TableError};
 use crate::index::Index;
 use std::collections::btree_map::Entry;
 use std::collections::*;
@@ -51,18 +51,50 @@ impl<T: Identity> Table<T> {
         self.constraints_check(&element)?;
 
         // insert into indices
+        self.indices_insert(&element)?;
 
         // insert into data
         let primary_key = element.primary_key();
         match self.data.entry(primary_key.clone()) {
             Entry::Vacant(entry) => entry.insert(element),
-            Entry::Occupied(_) => return Err(TableError::Exists(primary_key)),
+            Entry::Occupied(_) => {
+                let _ = self.indices_remove(&element);
+                return Err(TableError::Exists(primary_key));
+            }
         };
 
         // apply post-insert hooks
         self.post_insert_hooks_apply(&primary_key);
 
         Ok(primary_key)
+    }
+
+    /// Insert an element into all indices.
+    fn indices_insert(&mut self, element: &T) -> Result<(), TableError<T>> {
+        for (name, index) in self.indices.iter_mut() {
+            use IndexError::*;
+            match index.insert(element) {
+                Ok(()) => {}
+                Err(Duplicate(key)) => {
+                    let name = name.clone();
+                    let _ = self.indices_remove(&element);
+                    return Err(TableError::Duplicate(name, key));
+                }
+            }
+        }
+        Ok(())
+    }
+
+    /// Remove an element from all indices.
+    fn indices_remove(&mut self, element: &T) -> Result<(), TableError<T>> {
+        for (name, index) in self.indices.iter_mut() {
+            use IndexError::*;
+            match index.remove(element) {
+                Ok(()) => {}
+                Err(Duplicate(key)) => unreachable!(),
+            }
+        }
+        Ok(())
     }
 
     /// Check constraints against this element

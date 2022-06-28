@@ -7,4 +7,4 @@ mod tests;
 pub use crate::index::Index;
 pub use crate::table::Identity;
 pub use crate::table::Table;
-pub use error::TableError;
+pub use error::{IndexError, TableError};

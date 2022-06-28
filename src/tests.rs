@@ -73,13 +73,15 @@ fn cannot_insert_duplicate_primary_key() {
 #[test]
 fn cannot_insert_failing_constraint() {
     let mut table = Table::new();
-    table.constraint_add("name_must_not_be_empty", |item: &Person| {
-        if item.name.len() == 0 {
-            Err(MyError::Fail)?
-        } else {
-            Ok(())
-        }
-    });
+    table
+        .constraint_add("name_must_not_be_empty", |item: &Person| {
+            if item.name.len() == 0 {
+                Err(MyError::Fail)?
+            } else {
+                Ok(())
+            }
+        })
+        .unwrap();
 
     let key = table
         .insert(Person {

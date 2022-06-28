@@ -1,10 +1,10 @@
 use crate::Identity;
-use crate::TableError;
+use crate::IndexError;
 use std::collections::*;
 
 pub trait Index<T: Identity> {
-    fn insert(&mut self, value: &T) -> Result<(), TableError<T>>;
-    fn remove(&mut self, value: &T) -> Result<(), TableError<T>>;
+    fn insert(&mut self, value: &T) -> Result<(), IndexError<T>>;
+    fn remove(&mut self, value: &T) -> Result<(), IndexError<T>>;
 }
 
 #[derive(Default)]
