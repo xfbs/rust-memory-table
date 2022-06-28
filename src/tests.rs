@@ -98,3 +98,31 @@ fn cannot_insert_failing_constraint() {
     });
     assert!(result.is_err());
 }
+
+#[test]
+fn cannot_insert_failing_constraint_after() {
+    let mut table = Table::new();
+    table
+        .insert(Person {
+            id: 0,
+            name: "Mike".into(),
+            age: 32,
+        })
+        .unwrap();
+    table
+        .insert(Person {
+            id: 1,
+            name: "".into(),
+            age: 32,
+        })
+        .unwrap();
+
+    let result = table.constraint_add("name_must_not_be_empty", |item: &Person| {
+        if item.name.len() == 0 {
+            Err(MyError::Fail)?
+        } else {
+            Ok(())
+        }
+    });
+    assert!(result.is_err());
+}

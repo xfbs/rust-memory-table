@@ -1,4 +1,5 @@
 use crate::error::TableError;
+use crate::index::Index;
 use std::collections::btree_map::Entry;
 use std::collections::*;
 use std::error::Error;
@@ -14,6 +15,7 @@ pub struct Table<T: Identity> {
     pre_insert_hooks: BTreeMap<String, Box<dyn Fn(&mut Self, &mut T)>>,
     post_insert_hooks: BTreeMap<String, Box<dyn Fn(&mut Self, &T::PrimaryKey)>>,
     constraints: BTreeMap<String, Box<dyn Fn(&T) -> Result<(), Box<dyn Error>>>>,
+    indices: BTreeMap<String, Box<dyn Index<T>>>,
 }
 
 impl<T: Identity> Default for Table<T> {
@@ -23,6 +25,7 @@ impl<T: Identity> Default for Table<T> {
             pre_insert_hooks: Default::default(),
             post_insert_hooks: Default::default(),
             constraints: Default::default(),
+            indices: Default::default(),
         }
     }
 }
@@ -40,22 +43,23 @@ impl<T: Identity> Table<T> {
 
     /// Try inserting an element
     pub fn insert(&mut self, mut element: T) -> Result<T::PrimaryKey, TableError<T>> {
-        // make sure constraints do not complain
-        self.constraints_check(&element)?;
-
-        // apply pre-insert hooks
+        // apply pre-insert hooks, need to do this first because they might
+        // modify the element.
         self.pre_insert_hooks_apply(&mut element);
+
+        // make sure constraints do not complain.
+        self.constraints_check(&element)?;
 
         // insert into indices
 
         // insert into data
         let primary_key = element.primary_key();
-
         match self.data.entry(primary_key.clone()) {
             Entry::Vacant(entry) => entry.insert(element),
             Entry::Occupied(_) => return Err(TableError::Exists(primary_key)),
         };
 
+        // apply post-insert hooks
         self.post_insert_hooks_apply(&primary_key);
 
         Ok(primary_key)
@@ -99,9 +103,19 @@ impl<T: Identity> Table<T> {
         &mut self,
         name: &str,
         constraint: impl Fn(&T) -> Result<(), Box<dyn Error>> + 'static,
-    ) {
+    ) -> Result<(), TableError<T>> {
+        // make sure this constraint works with existing data
+        for (_, value) in &self.data {
+            if let Err(error) = constraint(value) {
+                return Err(TableError::Constraint(name.to_string(), error));
+            }
+        }
+
+        // add constraint
         self.constraints
             .insert(name.to_string(), Box::new(constraint));
+
+        Ok(())
     }
 
     /// Remove a constraint from this table
@@ -115,10 +129,3 @@ impl<T: Identity> Table<T> {
             .insert(name.to_string(), Box::new(hook));
     }
 }
-
-pub trait Index<T> {
-    fn insert(&mut self, value: T) -> bool;
-}
-
-#[derive(Default)]
-pub struct CustomIndex {}
