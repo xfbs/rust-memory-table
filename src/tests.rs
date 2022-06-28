@@ -1,5 +1,7 @@
 use crate::*;
 use anyhow::anyhow;
+use rand::distributions::{Alphanumeric, DistString};
+use rand::*;
 
 #[derive(Debug, Clone)]
 struct Person {
@@ -204,4 +206,52 @@ fn can_insert_duplicate_index() {
             age: 32,
         })
         .unwrap();
+}
+
+#[test]
+fn can_insert_one_many_rows() {
+    let mut rng = rand::rngs::StdRng::seed_from_u64(23420292352);
+    let amount = 100_000;
+    let mut table = Table::new();
+
+    // auto-increment primary key
+    table.pre_insert_hook_add("primary_key", |table: &mut Table<Person>, item| {
+        item.id = table.len() as u64;
+    });
+
+    // constraint to make sure age is valid
+    table
+        .constraint_add("age", |item: &Person| {
+            if item.age > 100 {
+                Err(MyError::Fail)?
+            } else {
+                Ok(())
+            }
+        })
+        .unwrap();
+
+    // add unique name index
+    table
+        .index_add(
+            "name",
+            UniqueBTreeIndex::new(|item: &Person| item.name.clone()),
+        )
+        .unwrap();
+
+    // add age index
+    table
+        .index_add("age", BTreeIndex::new(|item: &Person| item.age))
+        .unwrap();
+
+    for i in 0..amount {
+        table
+            .insert(Person {
+                id: 0,
+                name: Alphanumeric.sample_string(&mut rng, 16),
+                age: rng.gen_range(0..100),
+            })
+            .unwrap();
+    }
+
+    assert_eq!(table.len(), amount);
 }

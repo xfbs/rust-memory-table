@@ -8,3 +8,4 @@ thiserror = "1.0.31"
 
 [dev-dependencies]
 anyhow = "1.0.58"
+rand = "0.8.5"
