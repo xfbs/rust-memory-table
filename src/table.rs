@@ -97,6 +97,32 @@ impl<T: Identity> Table<T> {
         Ok(())
     }
 
+    /// Adds an index to the table
+    pub fn index_add(
+        &mut self,
+        name: &str,
+        mut index: impl Index<T> + 'static,
+    ) -> Result<(), TableError<T>> {
+        index.clear();
+
+        // insert all current data into the index.
+        for (_, data) in &self.data {
+            match index.insert(&data) {
+                Ok(()) => {}
+                // TODO
+                Err(e) => unimplemented!(),
+            }
+        }
+
+        self.indices.insert(name.to_string(), Box::new(index));
+        Ok(())
+    }
+
+    /// Removes an index from the table, if it exists.
+    pub fn index_remove(&mut self, name: &str) -> Option<Box<dyn Index<T>>> {
+        self.indices.remove(name)
+    }
+
     /// Check constraints against this element
     pub fn constraints_check(&self, element: &T) -> Result<(), TableError<T>> {
         for (name, constraint) in self.constraints.iter() {
