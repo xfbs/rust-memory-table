@@ -52,7 +52,7 @@ impl<T: Identity, K: Ord, F: Fn(&T) -> K> UniqueBTreeIndex<T, K, F> {
             }
             Entry::Occupied(value) => {
                 // FIXME error?
-                unimplemented!()
+                Ok(())
             }
         }
     }
@@ -72,12 +72,82 @@ impl<T: Identity, K: Ord, F: Fn(&T) -> K> Index<T> for UniqueBTreeIndex<T, K, F>
     }
 
     fn remove(&mut self, value: &T) -> Result<(), IndexError<T>> {
-        unimplemented!()
+        self.remove(value)
     }
 }
 
 #[derive(Default)]
-pub struct BTreeIndex {}
+pub struct BTreeIndex<T: Identity, K: Ord, F: Fn(&T) -> K> {
+    map: F,
+    data: BTreeMap<K, BTreeSet<T::PrimaryKey>>,
+}
+
+impl<T: Identity, K: Ord, F: Fn(&T) -> K> BTreeIndex<T, K, F> {
+    pub fn new(map: F) -> Self {
+        BTreeIndex {
+            map,
+            data: Default::default(),
+        }
+    }
+
+    pub fn insert(&mut self, element: &T) -> Result<(), IndexError<T>> {
+        let key = (self.map)(&element);
+        match self.data.entry(key) {
+            Entry::Vacant(entry) => {
+                let mut set = BTreeSet::new();
+                set.insert(element.primary_key());
+                entry.insert(set);
+                Ok(())
+            }
+            Entry::Occupied(mut value) => {
+                let mut set = value.get_mut();
+                set.insert(element.primary_key());
+                Ok(())
+            }
+        }
+    }
+
+    pub fn remove(&mut self, element: &T) -> Result<(), IndexError<T>> {
+        let key = (self.map)(&element);
+        match self.data.entry(key) {
+            Entry::Occupied(mut value) => {
+                let mut set = value.get_mut();
+                set.remove(&element.primary_key());
+
+                // remove the entry altogether if the set is empty
+                if set.len() == 0 {
+                    drop(set);
+                    value.remove();
+                }
+
+                Ok(())
+            }
+            Entry::Vacant(entry) => {
+                // FIXME error?
+                //unimplemented!()
+                Ok(())
+            }
+        }
+    }
+
+    pub fn clear(&mut self) {
+        self.data.clear()
+    }
+}
+
+impl<T: Identity, K: Ord, F: Fn(&T) -> K> Index<T> for BTreeIndex<T, K, F> {
+    fn clear(&mut self) {
+        self.clear()
+    }
+
+    fn insert(&mut self, value: &T) -> Result<(), IndexError<T>> {
+        self.insert(value)
+    }
+
+    fn remove(&mut self, value: &T) -> Result<(), IndexError<T>> {
+        self.remove(value)
+    }
+}
 
 #[derive(Default)]
 pub struct HashIndex {}

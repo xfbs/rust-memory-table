@@ -128,3 +128,80 @@ fn cannot_insert_failing_constraint_after() {
     });
     assert!(result.is_err());
 }
+
+#[test]
+fn cannot_insert_duplicate_unique_index() {
+    let mut table = Table::new();
+    table
+        .index_add(
+            "name",
+            UniqueBTreeIndex::new(|item: &Person| item.name.clone()),
+        )
+        .unwrap();
+    let key = table
+        .insert(Person {
+            id: 0,
+            name: "Mike".into(),
+            age: 32,
+        })
+        .unwrap();
+
+    // inserting same data should fail
+    let result = table.insert(Person {
+        id: 1,
+        name: "Mike".into(),
+        age: 32,
+    });
+    assert!(result.is_err());
+}
+
+#[test]
+fn can_insert_multiple_unique_index() {
+    let mut table = Table::new();
+    table
+        .index_add(
+            "name",
+            UniqueBTreeIndex::new(|item: &Person| item.name.clone()),
+        )
+        .unwrap();
+    let key = table
+        .insert(Person {
+            id: 0,
+            name: "Mike".into(),
+            age: 32,
+        })
+        .unwrap();
+
+    // inserting same data should fail
+    let result = table
+        .insert(Person {
+            id: 1,
+            name: "John".into(),
+            age: 32,
+        })
+        .unwrap();
+}
+
+#[test]
+fn can_insert_duplicate_index() {
+    let mut table = Table::new();
+    table
+        .index_add("name", BTreeIndex::new(|item: &Person| item.name.clone()))
+        .unwrap();
+    let key = table
+        .insert(Person {
+            id: 0,
+            name: "Mike".into(),
+            age: 32,
+        })
+        .unwrap();
+
+    // inserting same data should fail
+    let result = table
+        .insert(Person {
+            id: 1,
+            name: "Mike".into(),
+            age: 32,
+        })
+        .unwrap();
+}
