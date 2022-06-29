@@ -6,7 +6,7 @@ use std::error::Error;
 use std::fmt::Debug;
 
 pub trait Identity {
-    type PrimaryKey: Eq + Ord + Clone + Debug;
+    type PrimaryKey: Eq + Ord + Clone + Debug + 'static;
     fn primary_key(&self) -> Self::PrimaryKey;
 }
 
@@ -80,6 +80,7 @@ impl<T: Identity> Table<T> {
                     let _ = self.indices_remove(&element);
                     return Err(TableError::Duplicate(name, key));
                 }
+                Err(KeyType) => unreachable!(),
             }
         }
         Ok(())
@@ -92,6 +93,7 @@ impl<T: Identity> Table<T> {
             match index.remove(element) {
                 Ok(()) => {}
                 Err(Duplicate(key)) => unreachable!(),
+                Err(KeyType) => unreachable!(),
             }
         }
         Ok(())

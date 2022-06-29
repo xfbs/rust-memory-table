@@ -17,4 +17,6 @@ pub enum TableError<T: Identity> {
 pub enum IndexError<T: Identity> {
     #[error("Duplicate entry, already has {0:?}")]
     Duplicate(T::PrimaryKey),
+    #[error("Wrong key type")]
+    KeyType,
 }
