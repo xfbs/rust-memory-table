@@ -1,5 +1,6 @@
 use crate::error::{IndexError, TableError};
 use crate::index::Index;
+use std::any::Any;
 use std::collections::btree_map::Entry;
 use std::collections::*;
 use std::error::Error;
@@ -164,6 +165,15 @@ impl<T: Identity> Table<T> {
     /// Try looking up an element by it's primary key
     pub fn lookup(&self, key: &T::PrimaryKey) -> Option<&T> {
         self.data.get(key)
+    }
+
+    /// Lookup in index
+    pub fn index_lookup(
+        &self,
+        index: &str,
+        key: &dyn Any,
+    ) -> Result<Box<dyn Iterator<Item = &T>>, TableError<T>> {
+        unimplemented!()
     }
 
     /// Add a constraint to this table
