@@ -29,6 +29,14 @@ pub trait Index<T: Identity> {
     /// Remove an element from the index.
     fn remove(&mut self, value: &T) -> Result<(), IndexError<T>>;
 
+    /// Insert multiple elements into the index.
+    fn remove_bulk(
+        &mut self,
+        mut values: Box<dyn Iterator<Item = &T>>,
+    ) -> Result<(), IndexError<T>> {
+        unimplemented!()
+    }
+
     /// Lookup a key in this index.
     fn lookup(
         &mut self,

@@ -24,6 +24,52 @@ enum MyError {
 }
 
 #[test]
+fn can_count_entries() {
+    let mut table = Table::new();
+    assert_eq!(table.len(), 0);
+    table
+        .insert(Person {
+            id: 0,
+            name: "Mike".into(),
+            age: 32,
+        })
+        .unwrap();
+    assert_eq!(table.len(), 1);
+    table
+        .insert(Person {
+            id: 1,
+            name: "Mike".into(),
+            age: 32,
+        })
+        .unwrap();
+    assert_eq!(table.len(), 2);
+}
+
+#[test]
+fn can_clear_entries() {
+    let mut table = Table::new();
+    table
+        .insert(Person {
+            id: 0,
+            name: "Mike".into(),
+            age: 32,
+        })
+        .unwrap();
+    table
+        .insert(Person {
+            id: 1,
+            name: "Mike".into(),
+            age: 32,
+        })
+        .unwrap();
+    assert_eq!(table.len(), 2);
+    table.clear();
+    assert_eq!(table.len(), 0);
+    assert!(table.lookup(&0).is_none());
+    assert!(table.lookup(&1).is_none());
+}
+
+#[test]
 fn can_create_person_table() {
     let mut table = Table::new();
     table.insert(Person {

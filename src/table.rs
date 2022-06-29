@@ -41,6 +41,14 @@ impl<T: Identity> Table<T> {
         self.data.len()
     }
 
+    /// Clear all data in this table.
+    pub fn clear(&mut self) {
+        self.data.clear();
+        for (_, index) in &mut self.indices {
+            index.clear();
+        }
+    }
+
     /// Try inserting an element
     pub fn insert(&mut self, mut element: T) -> Result<T::PrimaryKey, TableError<T>> {
         // apply pre-insert hooks, need to do this first because they might
